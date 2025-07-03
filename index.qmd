@@ -36,7 +36,7 @@ edu_data <- edu_data |>
   mutate(
     bach_plus = bachE + mastersE + profE + doctorateE,
     pct_bach_plus = 100 * bach_plus / totalE
-  )
+  ) |> st_transform(edu_data, crs = 4326)
 
 # Define color palette
 pal <- colorNumeric(
@@ -83,3 +83,5 @@ leaflet(edu_data) |>
     labFormat = labelFormat(suffix = "%", digits = 1)
   )
 ```
+
+The map illustrates the spatial distribution of educational attainment across census tracts in Los Angeles County, specifically focusing on the percentage of adults with a bachelor's degree or higher. Areas with higher concentrations of college-educated residents—such as Santa Monica, Pasadena, and coastal neighborhoods—appear in warmer colors like yellow and orange, indicating rates above 60%. In contrast, darker purple regions in the northern interior and parts of South and Southeast Los Angeles represent neighborhoods where fewer than 20% of adults hold a bachelor’s degree. The stark geographic disparities highlighted in the map reflect broader socioeconomic divides within the county, suggesting that access to higher education remains unevenly distributed. This visualization provides a powerful tool for identifying communities that may benefit from targeted educational resources or policy interventions.
