@@ -7,41 +7,21 @@ execute:
 ```{r}
 #| warning: false
 #| message: false
-#| include: false
 library(tidyverse)
-library(tidycensus)
 library(leaflet)
 library(sf)
-library(scales)
-
-edu_data <- get_acs(
-  geography = "tract",
-  variables = c(total = "B15003_001",
-                bach = "B15003_022",
-                masters = "B15003_023",
-                prof = "B15003_024",
-                doctorate = "B15003_025"),
-  state = "CA",
-  county = "Los Angeles",
-  year = 2022,         # change year if needed
-  survey = "acs5",
-  geometry = TRUE,     # if you want spatial data (e.g., for mapping)
-  output = "wide"
-)
 ```
 
 ```{r}
-# Calculate percentage if not done already
-edu_data <- edu_data |>
-  mutate(
-    bach_plus = bachE + mastersE + profE + doctorateE,
-    pct_bach_plus = 100 * bach_plus / totalE
-  ) |> st_transform(edu_data, crs = 4326)
+# Load saved dataset
+edu_data <- readRDS("data/edu_data.rds")
+
+la_edu = edu_data |> st_transform(edu_data, crs = 4326)
 
 # Define color palette
 pal <- colorNumeric(
   palette = "plasma",
-  domain = edu_data$pct_bach_plus,
+  domain = la_edu$pct_bach_plus,
   na.color = "transparent"
 )
 
@@ -49,11 +29,11 @@ pal <- colorNumeric(
 labels <- sprintf(
   "<strong>%s</strong><br/>%s%% with Bachelor's or higher",
   edu_data$NAME,
-  round(edu_data$pct_bach_plus, 1)
+  round(la_edu$pct_bach_plus, 1)
 ) |> lapply(htmltools::HTML)
 
 # Build the leaflet map
-leaflet(edu_data) |>
+leaflet(la_edu) |>
   addProviderTiles("CartoDB.Positron") |>
   addPolygons(
     fillColor = ~pal(pct_bach_plus),
