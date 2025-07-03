@@ -1,0 +1,85 @@
+---
+title: "Los Angeles Education"
+execute: 
+  echo: false
+---
+
+```{r}
+#| warning: false
+#| message: false
+#| include: false
+library(tidyverse)
+library(tidycensus)
+library(leaflet)
+library(sf)
+library(scales)
+
+edu_data <- get_acs(
+  geography = "tract",
+  variables = c(total = "B15003_001",
+                bach = "B15003_022",
+                masters = "B15003_023",
+                prof = "B15003_024",
+                doctorate = "B15003_025"),
+  state = "CA",
+  county = "Los Angeles",
+  year = 2022,         # change year if needed
+  survey = "acs5",
+  geometry = TRUE,     # if you want spatial data (e.g., for mapping)
+  output = "wide"
+)
+```
+
+```{r}
+# Calculate percentage if not done already
+edu_data <- edu_data |>
+  mutate(
+    bach_plus = bachE + mastersE + profE + doctorateE,
+    pct_bach_plus = 100 * bach_plus / totalE
+  )
+
+# Define color palette
+pal <- colorNumeric(
+  palette = "plasma",
+  domain = edu_data$pct_bach_plus,
+  na.color = "transparent"
+)
+
+# Create labels for hover popups
+labels <- sprintf(
+  "<strong>%s</strong><br/>%s%% with Bachelor's or higher",
+  edu_data$NAME,
+  round(edu_data$pct_bach_plus, 1)
+) |> lapply(htmltools::HTML)
+
+# Build the leaflet map
+leaflet(edu_data) |>
+  addProviderTiles("CartoDB.Positron") |>
+  addPolygons(
+    fillColor = ~pal(pct_bach_plus),
+    weight = 0.3,
+    opacity = 1,
+    color = "white",
+    dashArray = "3",
+    fillOpacity = 0.7,
+    highlightOptions = highlightOptions(
+      weight = 1.5,
+      color = "#666",
+      fillOpacity = 0.8,
+      bringToFront = TRUE
+    ),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "13px",
+      direction = "auto"
+    )
+  ) |>
+  addLegend(
+    pal = pal,
+    values = ~pct_bach_plus,
+    title = "% Bachelor's or Higher",
+    position = "bottomright",
+    labFormat = labelFormat(suffix = "%", digits = 1)
+  )
+```
